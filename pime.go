@@ -30,7 +30,7 @@ func main() {
 		printError(err)
 
 		// 輸入 sqlite3 檔名
-		outputPath, err := dialog.File().Title("儲存檔案").Save()
+		outputPath, err = dialog.File().Title("儲存檔案").Save()
 		printError(err)
 
 		// 自動補上副檔名（如果使用者沒輸入）
