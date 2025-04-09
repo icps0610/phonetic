@@ -2,3 +2,4 @@ go.mod
 go.sum
 
 phonetic.txt
+chewing.sqlite3
