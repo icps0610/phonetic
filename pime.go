@@ -67,6 +67,8 @@ func main() {
 			db := dbData(phrase, length, phones)
 			dbDatas = append(dbDatas, db)
 		}
+
+		fmt.Println("即將匯入筆數：", len(dbDatas))
 		// 插入資料
 		dbImport(dbDatas, outputPath)
 
@@ -93,13 +95,16 @@ func ReadDatas(path string) [][]string {
 	var contents [][]string
 	for line := range strings.SplitSeq(string(utf8Bytes), "\n") {
 		// 取代全形空白
-		line = strings.ReplaceAll(line, `\u3000`, ``)
+		line = strings.ReplaceAll(line, `　`, ``)
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
 		// 有詞彙和注音符號部份
 		data := strings.Split(line, `  `)
+		if len(data) < 2 {
+			continue // 防止格式錯誤的行
+		}
 		// 詞彙
 		phrase := data[0]
 		// 注音符號
@@ -131,32 +136,21 @@ func dbData(phrase string, length int, phones []int) []any {
 	return values
 }
 
-// 產生 DB 檔案
-func createDB(outputPath string) {
+// 插入資料
+func dbImport(dbDatas [][]any, outputPath string) {
+
+	// 先產生一個空白db檔案
 	db, err := sql.Open("sqlite3", outputPath)
 	printError(err)
 	defer db.Close()
 
 	createUserPhrase := `CREATE TABLE userphrase_v1 (time INTEGER,user_freq INTEGER,max_freq INTEGER,orig_freq INTEGER,length INTEGER,phone_0 INTEGER,phone_1 INTEGER,phone_2 INTEGER,phone_3 INTEGER,phone_4 INTEGER,phone_5 INTEGER,phone_6 INTEGER,phone_7 INTEGER,phone_8 INTEGER,phone_9 INTEGER,phone_10 INTEGER,phrase TEXT,PRIMARY KEY (phone_0,phone_1,phone_2,phone_3,phone_4,phone_5,phone_6,phone_7,phone_8,phone_9,phone_10,phrase));`
-
 	createConfig := `CREATE TABLE config_v1 (id INTEGER,value INTEGER,PRIMARY KEY (id));`
 
 	_, err = db.Exec(createUserPhrase)
 	printError(err)
-
 	_, err = db.Exec(createConfig)
 	printError(err)
-}
-
-// 插入資料
-func dbImport(dbDatas [][]any, outputPath string) {
-	// 先產生一個空白db檔案
-	createDB(outputPath)
-
-	// 開始連接資料庫
-	db, err := sql.Open("sqlite3", outputPath)
-	printError(err)
-	defer db.Close()
 
 	// SQL 插入語句
 	sqlStmt := `INSERT INTO userphrase_v1 (	time, user_freq, max_freq, orig_freq, length, phone_0, phone_1, phone_2, phone_3, phone_4, phone_5, phone_6, phone_7, phone_8, phone_9, phone_10, phrase) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
